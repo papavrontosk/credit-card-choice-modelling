@@ -110,19 +110,19 @@ consumer-choice-multinomial-logit/
 | results | Model outputs and figures |
 | report | Final project report |
 
-## Key Visualizations
+## Key Results
 
-### Estimated Choice Probabilities
+### Estimated Parameters
 
-*(Insert figure)*
+![Estimated Parameters](results/estimated_parameters.png)
 
-### New Product Market Share Simulation
+### Mean Own Elasticities
 
-*(Insert figure)*
+![Mean Own Elasticities](results/mean_own_elasticities.png)
 
-### Interest Rate Cap Policy Simulation
+### Mean Own Marginal Effects
 
-*(Insert figure)*
+![Mean Own Marginal Effects](results/mean_own_marginal_effects.png)
 
 ## Author
 
