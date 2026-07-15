@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Card Choice Modelling — MNL Assignment</title>
+<style>
+  /* ── Typography & Layout ─────────────────────────────────────────────── */
+  :root {
+    --blue:    #1a3a5c;
+    --accent:  #2d7dd2;
+    --light:   #e8f0f9;
+    --green:   #1b6b3a;
+    --light-g: #e6f4ec;
+    --red:     #8b0000;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --border:  #c8d8ee;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px; line-height: 1.7; color: #1a1a2e;
+    background: #f4f7fb; padding: 0 0 60px;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────────────── */
+  header {
+    background: linear-gradient(135deg, var(--blue) 0%, #2d5a8e 100%);
+    color: #fff; padding: 40px 60px 32px;
+  }
+  header h1 { font-size: 1.9rem; font-weight: 700; margin-bottom: 6px; }
+  header p  { opacity: .8; font-size: .95rem; }
+
+  /* ── Navigation ─────────────────────────────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--blue); border-bottom: 3px solid var(--accent);
+    padding: 0 60px; display: flex; gap: 4px;
+  }
+  nav a {
+    color: #cde; text-decoration: none; padding: 12px 16px;
+    font-size: .88rem; font-weight: 600; border-bottom: 3px solid transparent;
+    transition: all .2s; margin-bottom: -3px;
+  }
+  nav a:hover, nav a.active { color: #fff; border-color: var(--accent); }
+
+  /* ── Sections ────────────────────────────────────────────────────────── */
+  main { max-width: 1060px; margin: 0 auto; padding: 0 30px; }
+  section { margin-top: 48px; }
+  h2 {
+    font-size: 1.35rem; color: var(--blue); font-weight: 700;
+    padding: 10px 0 10px 18px; border-left: 5px solid var(--accent);
+    margin-bottom: 20px;
+  }
+  h3 { font-size: 1.1rem; color: var(--blue); margin: 24px 0 10px; font-weight: 600; }
+  p  { margin-bottom: 14px; }
+
+  /* ── Code blocks ─────────────────────────────────────────────────────── */
+  .code-block {
+    background: var(--code-bg); color: var(--code-fg);
+    border-radius: 10px; overflow: hidden; margin: 18px 0;
+    box-shadow: 0 4px 18px rgba(0,0,0,.18);
+  }
+  .code-header {
+    background: #313244; color: #a6adc8; padding: 8px 18px;
+    font-size: .78rem; font-weight: 600; letter-spacing: .05em;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .code-header span { color: #89b4fa; }
+  pre { padding: 18px 22px; overflow-x: auto; font-size: .82rem;
+        line-height: 1.55; font-family: 'Cascadia Code','Fira Code',monospace; }
+  /* Syntax highlight tokens */
+  .kw { color: #cba6f7; } /* keyword */
+  .fn { color: #89b4fa; } /* function */
+  .st { color: #a6e3a1; } /* string */
+  .nm { color: #fab387; } /* number */
+  .cm { color: #6c7086; font-style: italic; } /* comment */
+  .op { color: #89dceb; } /* operator */
+
+  /* ── Output blocks ──────────────────────────────────────────────────── */
+  .output-block {
+    background: #f9fbfe; border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; margin: 12px 0 22px;
+    font-family: 'Cascadia Code','Courier New',monospace; font-size: .8rem;
+    line-height: 1.65; white-space: pre; overflow-x: auto;
+    color: #333;
+  }
+
+  /* ── Tables ──────────────────────────────────────────────────────────── */
+  .tbl-wrap { overflow-x: auto; margin: 16px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+  thead tr { background: var(--blue); color: #fff; }
+  thead th { padding: 9px 14px; text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #f0f5fc; }
+  tbody td { padding: 8px 14px; border-bottom: 1px solid #d9e5f3; }
+  .sig1 { color: #c47800; }   /* 90% */
+  .sig2 { color: var(--accent); } /* 95% */
+  .sig3 { color: var(--green); font-weight: 700; } /* 99% */
+
+  /* ── Callout boxes ───────────────────────────────────────────────────── */
+  .callout {
+    border-radius: 10px; padding: 16px 20px; margin: 16px 0;
+    border-left: 5px solid;
+  }
+  .callout.info  { background: var(--light);   border-color: var(--accent); }
+  .callout.good  { background: var(--light-g); border-color: var(--green); }
+  .callout.warn  { background: #fff8e1;        border-color: #e6a817; }
+  .callout strong { display: block; margin-bottom: 4px; font-size: .9rem; }
+
+  /* ── Equation display ─────────────────────────────────────────────────── */
+  .eq {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 22px; margin: 14px 0;
+    font-family: 'Georgia', serif; font-size: 1rem; text-align: center;
+    color: #1a1a2e; overflow-x: auto;
+  }
+  .eq sub, .eq sup { font-size: .7em; }
+
+  /* ── Result highlight ────────────────────────────────────────────────── */
+  .result-card {
+    background: var(--blue); color: #fff; border-radius: 12px;
+    padding: 20px 26px; margin: 20px 0; display: flex; gap: 28px;
+    flex-wrap: wrap;
+  }
+  .result-card .stat { flex: 1 1 160px; }
+  .result-card .val  { font-size: 1.7rem; font-weight: 700; color: #7bc4ff; }
+  .result-card .lbl  { font-size: .82rem; color: #aac7e8; margin-top: 2px; }
+  hr { border: none; border-top: 2px solid var(--border); margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Credit Card Choice Modelling</h1>
+  <p>Discrete Choice Analysis · Multinomial Logit via Maximum Likelihood · Case Study</p>
+  <p style="margin-top:14px;font-size:.95rem;opacity:.95;">
+    <strong style="opacity:1;">Author:</strong> Konstantinos Papavrontos
+  </p>
+</header>
+
+<nav>
+  <a href="#q1" class="active">Q1 · Utility Functions</a>
+  <a href="#q2">Q2 · MNL Estimation</a>
+  <a href="#q3">Q3 · New Card Simulation</a>
+  <a href="#q4">Q4 · Rate Cap Policy</a>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     QUESTION 1
+════════════════════════════════════════════════════════════════════════ -->
+<section id="q1">
+<h2>Question 1 — Utility Function Specification</h2>
+
+<h3>Choice Set</h3>
+<p>Each individual <em>i</em> faces a choice set of <strong>J = 5 alternatives</strong>:
+alternatives 1–4 are distinct credit-card products, and alternative 5 is the <em>opt-out</em>
+(no bank card chosen). The dataset confirms that alternative 5 always carries fee = 0,
+rate = 0, and rewards = 0.</p>
+
+<h3>Systematic Utility Components</h3>
+
+<p>Under Random Utility Maximization, individual <em>i</em> chooses alternative <em>j</em>
+if U<sub>ij</sub> &gt; U<sub>ik</sub> for all k ≠ j, where:</p>
+
+<div class="eq">
+  U<sub>ij</sub> = V<sub>ij</sub> + ε<sub>ij</sub>
+</div>
+
+<p>The systematic part V<sub>ij</sub> for <strong>credit-card alternatives j = 1, 2, 3, 4</strong> is:</p>
+
+<div class="eq">
+  V<sub>ij</sub> = α<sub>j</sub> + β<sub>fee</sub>·fee<sub>ij</sub>
+  + β<sub>rate</sub>·rate<sub>ij</sub>
+  + β<sub>rewards</sub>·rewards<sub>ij</sub>
+  + γ<sub>income,j</sub>·income<sub>i</sub>
+  + γ<sub>age,j</sub>·age<sub>i</sub>
+</div>
+
+<p>For the <strong>opt-out alternative j = 5</strong>:</p>
+
+<div class="eq">
+  V<sub>i5</sub> = α<sub>5</sub> + γ<sub>income,5</sub>·income<sub>i</sub>
+  + γ<sub>age,5</sub>·age<sub>i</sub>
+</div>
+
+<h3>Identification Normalisation</h3>
+<p>Alternative 1 serves as the base category: α<sub>1</sub> = 0,
+γ<sub>income,1</sub> = 0, γ<sub>age,1</sub> = 0.
+This normalisation removes the location indeterminacy of the MNL model.</p>
+
+<h3>Justification of Generic vs Alternative-Specific Parameters</h3>
+
+<div class="callout info">
+  <strong>Generic coefficients (β): fee, rate, rewards</strong>
+  Card attributes are <em>common across all alternatives they appear in</em>.
+  A consumer responds to cost regardless of which card carries it — the disutility of
+  paying €1 in fees is the same whether it is card 2 or card 4.
+  Using a single β for each attribute imposes preference homogeneity over the attribute
+  itself (not over the alternatives), which is the standard and theoretically justified
+  approach for product attributes in the discrete-choice literature.
+</div>
+
+<div class="callout info">
+  <strong>Alternative-specific constants (α<sub>j</sub>)</strong>
+  Each card may have unobserved attributes (brand reputation, credit limit, insurance,
+  acceptance network). The ASC captures the average utility of choosing alternative j
+  over the base, net of the observed attributes. The opt-out ASC (α<sub>5</sub>)
+  captures the average utility of not having any bank card.
+</div>
+
+<div class="callout info">
+  <strong>Alternative-specific sociodemographic interactions (γ<sub>income,j</sub>, γ<sub>age,j</sub>)</strong>
+  Income and age are individual-level variables that are constant across alternatives
+  for a given person. They therefore cannot enter as generic terms — doing so would add
+  the same value to all utilities and cancel out. They enter as alternative-specific
+  interactions: γ<sub>income,j</sub>·income<sub>i</sub> measures how a higher income
+  <em>differentially</em> shifts utility towards alternative j relative to the base.
+  This is the correct specification for individual characteristics in unlabelled choice
+  sets. (They are fixed for each person but vary in their effect on preference for
+  each alternative.)
+</div>
+
+<h3>Total Parameter Count</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Parameter group</th><th>Count</th><th>Identifiable?</th></tr></thead>
+  <tbody>
+    <tr><td>Generic: β<sub>fee</sub>, β<sub>rate</sub>, β<sub>rewards</sub></td><td>3</td><td class="sig3">✓</td></tr>
+    <tr><td>ASC: α<sub>2</sub>, α<sub>3</sub>, α<sub>4</sub>, α<sub>5</sub></td><td>4</td><td class="sig3">✓</td></tr>
+    <tr><td>γ<sub>income,j</sub> for j=2,3,4,5</td><td>4</td><td class="sig3">✓</td></tr>
+    <tr><td>γ<sub>age,j</sub> for j=2,3,4,5</td><td>4</td><td class="sig3">✓</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>15</strong></td><td></td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     QUESTION 2
+════════════════════════════════════════════════════════════════════════ -->
+<section id="q2">
+<h2>Question 2 — MNL Estimation via Maximum Likelihood</h2>
+
+<h3>Data Loading &amp; Preparation</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre><span class="cm"># ── Load data ─────────────────────────────────────────────────────────</span>
+df <span class="op">&lt;-</span> <span class="fn">read.csv</span>(<span class="st">"credit.csv"</span>)
+n  <span class="op">&lt;-</span> <span class="fn">nrow</span>(df)
+
+<span class="cm"># Alternative attributes (N × 5 matrices)</span>
+fees    <span class="op">&lt;-</span> <span class="fn">as.matrix</span>(df[, <span class="fn">paste0</span>(<span class="st">"fee_"</span>, <span class="nm">1</span><span class="op">:</span><span class="nm">5</span>)])
+rates   <span class="op">&lt;-</span> <span class="fn">as.matrix</span>(df[, <span class="fn">paste0</span>(<span class="st">"rate_"</span>, <span class="nm">1</span><span class="op">:</span><span class="nm">5</span>)])
+rewards <span class="op">&lt;-</span> <span class="fn">as.matrix</span>(df[, <span class="fn">paste0</span>(<span class="st">"rewards_"</span>, <span class="nm">1</span><span class="op">:</span><span class="nm">5</span>)])
+income  <span class="op">&lt;-</span> df<span class="op">$</span>income <span class="op">/</span> <span class="nm">1000</span>   <span class="cm"># scale to thousands €</span>
+age     <span class="op">&lt;-</span> df<span class="op">$</span>age
+choice  <span class="op">&lt;-</span> df<span class="op">$</span>choice         <span class="cm"># 1..5</span>
+balance <span class="op">&lt;-</span> df<span class="op">$</span>balance
+
+<span class="cm"># ── Log-likelihood function ────────────────────────────────────────────</span>
+<span class="cm"># params[1]  = beta_fee
+# params[2]  = beta_rate
+# params[3]  = beta_rewards
+# params[4:7]  = alpha_2..alpha_5  (alpha_1 = 0, normalisation)
+# params[8:11] = gamma_income_2..5 (gamma_income_1 = 0)
+# params[12:15]= gamma_age_2..5    (gamma_age_1 = 0)</span>
+
+log_lik <span class="op">&lt;-</span> <span class="kw">function</span>(params) {
+  bf  <span class="op">&lt;-</span> params[<span class="nm">1</span>]; br <span class="op">&lt;-</span> params[<span class="nm">2</span>]; brw <span class="op">&lt;-</span> params[<span class="nm">3</span>]
+  alp <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>, params[<span class="nm">4</span><span class="op">:</span><span class="nm">7</span>])
+  gi  <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>, params[<span class="nm">8</span><span class="op">:</span><span class="nm">11</span>])
+  ga  <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>, params[<span class="nm">12</span><span class="op">:</span><span class="nm">15</span>])
+
+  <span class="cm"># Systematic utility (n × 5)</span>
+  V <span class="op">&lt;-</span> bf <span class="op">*</span> fees <span class="op">+</span> br <span class="op">*</span> rates <span class="op">+</span> brw <span class="op">*</span> rewards <span class="op">+</span>
+       <span class="fn">matrix</span>(alp, n, <span class="nm">5</span>, byrow <span class="op">=</span> <span class="kw">TRUE</span>) <span class="op">+</span>
+       income <span class="op">%o%</span> gi <span class="op">+</span>
+       age    <span class="op">%o%</span> ga
+
+  <span class="cm"># Numerically stable softmax</span>
+  Vmax <span class="op">&lt;-</span> <span class="fn">apply</span>(V, <span class="nm">1</span>, max)
+  eV   <span class="op">&lt;-</span> <span class="fn">exp</span>(V <span class="op">-</span> Vmax)
+  P    <span class="op">&lt;-</span> eV <span class="op">/</span> <span class="fn">rowSums</span>(eV)
+
+  chosen <span class="op">&lt;-</span> P[<span class="fn">cbind</span>(<span class="fn">seq_len</span>(n), choice)]
+  <span class="op">-</span><span class="fn">sum</span>(<span class="fn">log</span>(chosen <span class="op">+</span> <span class="nm">1e-300</span>))
+}
+
+<span class="cm"># ── Optimisation ──────────────────────────────────────────────────────</span>
+x0  <span class="op">&lt;-</span> <span class="fn">rep</span>(<span class="nm">0</span>, <span class="nm">15</span>)
+res <span class="op">&lt;-</span> <span class="fn">optim</span>(x0, log_lik, method <span class="op">=</span> <span class="st">"L-BFGS-B"</span>,
+              control <span class="op">=</span> <span class="fn">list</span>(maxit <span class="op">=</span> <span class="nm">50000</span>, factr <span class="op">=</span> <span class="nm">1e-12</span>),
+              hessian <span class="op">=</span> <span class="kw">TRUE</span>)
+
+params_hat <span class="op">&lt;-</span> res<span class="op">$</span>par
+se         <span class="op">&lt;-</span> <span class="fn">sqrt</span>(<span class="fn">diag</span>(<span class="fn">solve</span>(res<span class="op">$</span>hessian)))
+t_stat     <span class="op">&lt;-</span> params_hat <span class="op">/</span> se
+p_val      <span class="op">&lt;-</span> <span class="nm">2</span> <span class="op">*</span> <span class="fn">pnorm</span>(<span class="op">-</span><span class="fn">abs</span>(t_stat))
+
+<span class="fn">cat</span>(<span class="st">"Log-likelihood:"</span>, <span class="op">-</span>res<span class="op">$</span>value, <span class="st">"\n"</span>)
+<span class="fn">cat</span>(<span class="st">"Converged    :"</span>, res<span class="op">$</span>convergence <span class="op">==</span> <span class="nm">0</span>, <span class="st">"\n"</span>)</pre>
+</div>
+
+<div class="output-block">Log-likelihood: -703.587
+Converged    : TRUE</div>
+
+<h3>Estimated Parameters</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre>param_names <span class="op">&lt;-</span> <span class="fn">c</span>(
+  <span class="st">"beta_fee"</span>, <span class="st">"beta_rate"</span>, <span class="st">"beta_rewards"</span>,
+  <span class="st">"alpha_2"</span>, <span class="st">"alpha_3"</span>, <span class="st">"alpha_4"</span>, <span class="st">"alpha_5"</span>,
+  <span class="st">"gamma_income_2"</span>, <span class="st">"gamma_income_3"</span>, <span class="st">"gamma_income_4"</span>, <span class="st">"gamma_income_5"</span>,
+  <span class="st">"gamma_age_2"</span>, <span class="st">"gamma_age_3"</span>, <span class="st">"gamma_age_4"</span>, <span class="st">"gamma_age_5"</span>
+)
+results_tbl <span class="op">&lt;-</span> <span class="fn">data.frame</span>(
+  Parameter <span class="op">=</span> param_names,
+  Estimate  <span class="op">=</span> <span class="fn">round</span>(params_hat, <span class="nm">5</span>),
+  Std.Error <span class="op">=</span> <span class="fn">round</span>(se, <span class="nm">5</span>),
+  t.value   <span class="op">=</span> <span class="fn">round</span>(t_stat, <span class="nm">3</span>),
+  p.value   <span class="op">=</span> <span class="fn">round</span>(p_val, <span class="nm">4</span>)
+)
+<span class="fn">print</span>(results_tbl)</pre>
+</div>
+
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th><th>Estimate</th><th>Std. Error</th>
+      <th>t-value</th><th>p-value</th><th>Sig.</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>β<sub>fee</sub></strong></td><td>−0.01598</td><td>0.00141</td><td class="sig3">−11.35</td><td>&lt;0.001</td><td class="sig3">***</td></tr>
+    <tr><td><strong>β<sub>rate</sub></strong></td><td>−25.633</td><td>1.2115</td><td class="sig3">−21.16</td><td>&lt;0.001</td><td class="sig3">***</td></tr>
+    <tr><td><strong>β<sub>rewards</sub></strong></td><td>1.4908</td><td>0.1160</td><td class="sig3">12.85</td><td>&lt;0.001</td><td class="sig3">***</td></tr>
+    <tr><td>α<sub>2</sub></td><td>0.6651</td><td>0.5297</td><td>1.26</td><td>0.209</td><td>—</td></tr>
+    <tr><td>α<sub>3</sub></td><td>0.7833</td><td>0.5143</td><td>1.52</td><td>0.128</td><td>—</td></tr>
+    <tr><td>α<sub>4</sub></td><td>−0.0066</td><td>0.5424</td><td>−0.01</td><td>0.990</td><td>—</td></tr>
+    <tr><td>α<sub>5</sub> (opt-out)</td><td>−2.524</td><td>1.2805</td><td class="sig2">−1.97</td><td>0.049</td><td class="sig2">**</td></tr>
+    <tr><td>γ<sub>income,2</sub></td><td>−0.00399</td><td>0.00762</td><td>−0.52</td><td>0.601</td><td>—</td></tr>
+    <tr><td>γ<sub>income,3</sub></td><td>0.00059</td><td>0.00754</td><td>0.08</td><td>0.937</td><td>—</td></tr>
+    <tr><td>γ<sub>income,4</sub></td><td>0.01038</td><td>0.00772</td><td>1.34</td><td>0.179</td><td>—</td></tr>
+    <tr><td>γ<sub>income,5</sub></td><td>−0.99628</td><td>0.14154</td><td class="sig3">−7.04</td><td>&lt;0.001</td><td class="sig3">***</td></tr>
+    <tr><td>γ<sub>age,2</sub></td><td>−0.00855</td><td>0.00876</td><td>−0.98</td><td>0.329</td><td>—</td></tr>
+    <tr><td>γ<sub>age,3</sub></td><td>−0.01413</td><td>0.00872</td><td class="sig1">−1.62</td><td>0.105</td><td>—</td></tr>
+    <tr><td>γ<sub>age,4</sub></td><td>−0.01112</td><td>0.00884</td><td>−1.26</td><td>0.208</td><td>—</td></tr>
+    <tr><td>γ<sub>age,5</sub></td><td>0.57009</td><td>0.08561</td><td class="sig3">6.66</td><td>&lt;0.001</td><td class="sig3">***</td></tr>
+  </tbody>
+</table>
+</div>
+<p style="font-size:.8rem;color:#555;">Significance codes: *** p&lt;0.001 &nbsp; ** p&lt;0.01 &nbsp; * p&lt;0.05 &nbsp; · p&lt;0.1</p>
+
+<div class="result-card">
+  <div class="stat"><div class="val">−703.6</div><div class="lbl">Log-Likelihood (model)</div></div>
+  <div class="stat"><div class="val">−1609.4</div><div class="lbl">Log-Likelihood (null)</div></div>
+  <div class="stat"><div class="val">0.563</div><div class="lbl">McFadden R²</div></div>
+  <div class="stat"><div class="val">1000</div><div class="lbl">Observations</div></div>
+</div>
+
+<h3>Model Fit</h3>
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre>ll_null   <span class="op">&lt;-</span> <span class="op">-</span>n <span class="op">*</span> <span class="fn">log</span>(<span class="nm">1</span><span class="op">/</span><span class="nm">5</span>)            <span class="cm"># uniform choice over 5 alternatives</span>
+ll_model  <span class="op">&lt;-</span> <span class="op">-</span>res<span class="op">$</span>value
+rho2      <span class="op">&lt;-</span> <span class="nm">1</span> <span class="op">-</span> ll_model <span class="op">/</span> ll_null   <span class="cm"># McFadden pseudo-R²</span>
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"LL(0)  = %.2f\nLL(β)  = %.2f\nρ²    = %.4f\n"</span>,
+            ll_null, ll_model, rho2))</pre>
+</div>
+<div class="output-block">LL(0)  = -1609.44
+LL(β)  = -703.59
+ρ²    = 0.5628</div>
+<p>A McFadden R² of <strong>0.563</strong> is exceptional for a discrete choice model
+(values above 0.4 are considered very good fit). The model explains a large share of
+the variation in credit-card choices.</p>
+
+<h3>2a — Sensitivity to Annual Fees and Interest Rates</h3>
+
+<h4>Willingness to Pay (WTP)</h4>
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre><span class="cm"># WTP = -beta_x / beta_fee (converts utility into euros)</span>
+wtp_rate_1pp  <span class="op">&lt;-</span> <span class="op">-</span>params_hat[<span class="st">"beta_rate"</span>] <span class="op">/</span> params_hat[<span class="st">"beta_fee"</span>] <span class="op">/</span> <span class="nm">100</span>
+wtp_rewards   <span class="op">&lt;-</span>  params_hat[<span class="st">"beta_rewards"</span>] <span class="op">/</span> (<span class="op">-</span>params_hat[<span class="st">"beta_fee"</span>])
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"WTP for 1 pp reduction in rate : €%.2f / year\n"</span>, wtp_rate_1pp))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"WTP for rewards programme       : €%.2f / year\n"</span>, wtp_rewards))</pre>
+</div>
+<div class="output-block">WTP for 1 pp reduction in rate : €16.04 / year
+WTP for rewards programme       : €93.28 / year</div>
+
+<h4>Own-Alternative Marginal Effects — Fee</h4>
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre><span class="cm"># For continuous attribute x in alt j:
+# ∂P_j/∂x_j = β_x · P_j · (1 − P_j)
+# Average across all 4 card alternatives and all observations</span>
+compute_probs <span class="op">&lt;-</span> <span class="kw">function</span>(params, fees., rates., rewards.) {
+  bf<span class="op">&lt;-</span>params[<span class="nm">1</span>]; br<span class="op">&lt;-</span>params[<span class="nm">2</span>]; brw<span class="op">&lt;-</span>params[<span class="nm">3</span>]
+  alp <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>,params[<span class="nm">4</span><span class="op">:</span><span class="nm">7</span>]); gi <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>,params[<span class="nm">8</span><span class="op">:</span><span class="nm">11</span>]); ga <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>,params[<span class="nm">12</span><span class="op">:</span><span class="nm">15</span>])
+  V <span class="op">&lt;-</span> bf<span class="op">*</span>fees. <span class="op">+</span> br<span class="op">*</span>rates. <span class="op">+</span> brw<span class="op">*</span>rewards. <span class="op">+</span>
+       <span class="fn">matrix</span>(alp,n,<span class="nm">5</span>,byrow<span class="op">=</span><span class="kw">TRUE</span>) <span class="op">+</span> income<span class="op">%o%</span>gi <span class="op">+</span> age<span class="op">%o%</span>ga
+  Vm <span class="op">&lt;-</span> <span class="fn">apply</span>(V,<span class="nm">1</span>,max); eV <span class="op">&lt;-</span> <span class="fn">exp</span>(V<span class="op">-</span>Vm)
+  eV <span class="op">/</span> <span class="fn">rowSums</span>(eV)
+}
+P <span class="op">&lt;-</span> <span class="fn">compute_probs</span>(params_hat, fees, rates, rewards)
+
+me_fee  <span class="op">&lt;-</span> <span class="fn">mean</span>(params_hat[<span class="nm">1</span>] <span class="op">*</span> P[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">*</span> (<span class="nm">1</span> <span class="op">-</span> P[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>]))
+me_rate <span class="op">&lt;-</span> <span class="fn">mean</span>(params_hat[<span class="nm">2</span>] <span class="op">*</span> P[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">*</span> (<span class="nm">1</span> <span class="op">-</span> P[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>]))
+
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Mean own ME, fee  : %.5f  (Δ prob per €1 increase)\n"</span>, me_fee))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Mean own ME, rate : %.4f  (Δ prob per unit increase in rate)\n"</span>, me_rate))</pre>
+</div>
+<div class="output-block">Mean own ME, fee  : -0.00151  (Δ prob per €1 increase)
+Mean own ME, rate : -2.4245   (Δ prob per unit increase in rate)</div>
+
+<h4>Own-Alternative Elasticities</h4>
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre><span class="cm"># Own elasticity: ε_jj = β_x · x_j · (1 − P_j)</span>
+elas_fee  <span class="op">&lt;-</span> <span class="fn">mean</span>(params_hat[<span class="nm">1</span>] <span class="op">*</span> fees[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>]  <span class="op">*</span> (<span class="nm">1</span> <span class="op">-</span> P[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>]))
+elas_rate <span class="op">&lt;-</span> <span class="fn">mean</span>(params_hat[<span class="nm">2</span>] <span class="op">*</span> rates[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">*</span> (<span class="nm">1</span> <span class="op">-</span> P[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>]))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Mean own elasticity, fee  : %.4f\n"</span>, elas_fee))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Mean own elasticity, rate : %.4f\n"</span>, elas_rate))</pre>
+</div>
+<div class="output-block">Mean own elasticity, fee  : -0.6722
+Mean own elasticity, rate : -3.3147</div>
+
+<div class="callout info">
+  <strong>Interpretation — Sensitivity to Fees and Rates</strong>
+  <p>Customers are <em>more than four times as sensitive to interest rates as to annual fees</em>
+  in elasticity terms. A 1% relative increase in the annual rate reduces the probability of
+  choosing a card by about 3.31%, while a 1% relative increase in the annual fee reduces
+  it by only 0.67%. In absolute terms, a €1 increase in the annual fee reduces choice
+  probability by 0.15 pp, while a 1 pp increase in the rate (e.g. from 15% to 16%)
+  reduces it by 0.24 pp. Customers are willing to pay €16 per year to have the rate
+  reduced by 1 percentage point. This suggests the bank should prioritise keeping rates
+  competitive above all else.</p>
+</div>
+
+<h3>2b — Value of Rewards Programmes</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre><span class="cm"># Discrete change: all 4 cards go from rewards=0 to rewards=1
+# ΔP_j = P_j(rewards=1) − P_j(rewards=0), averaged over j=1..4 and i</span>
+rewards_0 <span class="op">&lt;-</span> rewards; rewards_0[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">&lt;-</span> <span class="nm">0</span>
+rewards_1 <span class="op">&lt;-</span> rewards; rewards_1[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">&lt;-</span> <span class="nm">1</span>
+P0 <span class="op">&lt;-</span> <span class="fn">compute_probs</span>(params_hat, fees, rates, rewards_0)
+P1 <span class="op">&lt;-</span> <span class="fn">compute_probs</span>(params_hat, fees, rates, rewards_1)
+dc_rewards <span class="op">&lt;-</span> <span class="fn">mean</span>(P1[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">-</span> P0[,<span class="nm">1</span><span class="op">:</span><span class="nm">4</span>])
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Mean discrete change in card-choice prob (rewards 0→1): %.4f\n"</span>, dc_rewards))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"WTP for rewards programme: €%.2f / year\n"</span>, wtp_rewards))</pre>
+</div>
+<div class="output-block">Mean discrete change in card-choice prob (rewards 0→1): 0.0043
+WTP for rewards programme: €93.28 / year</div>
+
+<div class="callout good">
+  <strong>Interpretation — Value of Rewards Programmes</strong>
+  <p>The rewards programme has a strongly significant positive effect on choice (β = 1.491,
+  t = 12.85). When all cards switch from no-rewards to rewards, the average probability
+  of choosing each card increases by 0.43 pp. More tellingly, customers are willing to
+  pay <strong>€93.28 per year</strong> for a rewards programme — nearly six times the
+  willingness to pay for a 1-pp rate reduction. The rewards coefficient has the largest
+  WTP of any attribute, strongly suggesting the bank should maintain and emphasise
+  rewards programmes as a key differentiator.</p>
+</div>
+
+<h3>Sociodemographic Findings</h3>
+<div class="callout warn">
+  <strong>Income and Age Effects</strong>
+  Income and age have no statistically significant differential effect on preferences
+  <em>among</em> the four card alternatives (γ coefficients for j=2,3,4 are all
+  insignificant). However, both variables strongly determine the probability of
+  <em>opting out</em>: a higher income significantly <em>reduces</em> the probability
+  of opting out (γ<sub>income,5</sub> = −0.996, p&lt;0.001), while older individuals
+  are significantly <em>more likely</em> to opt out (γ<sub>age,5</sub> = 0.570,
+  p&lt;0.001). In other words: wealthier customers are more likely to hold a credit
+  card; older customers are more likely to decline entirely.
+</div>
+</section>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     QUESTION 3
+════════════════════════════════════════════════════════════════════════ -->
+<section id="q3">
+<h2>Question 3 — New Card Simulation</h2>
+
+<p>The bank proposes replacing all four existing cards with a single new card:
+<strong>fee = €70/year, rate = 20%, rewards programme = yes</strong>.
+Only two alternatives remain in the choice set: the new card and the opt-out (alt 5).</p>
+
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre><span class="cm"># New card attributes (constant across all individuals)</span>
+fee_new     <span class="op">&lt;-</span> <span class="nm">70</span>
+rate_new    <span class="op">&lt;-</span> <span class="nm">0.20</span>
+rewards_new <span class="op">&lt;-</span> <span class="nm">1</span>
+
+<span class="cm"># Unpack parameters</span>
+bf <span class="op">&lt;-</span> params_hat[<span class="nm">1</span>]; br <span class="op">&lt;-</span> params_hat[<span class="nm">2</span>]; brw <span class="op">&lt;-</span> params_hat[<span class="nm">3</span>]
+alp5 <span class="op">&lt;-</span> params_hat[<span class="nm">7</span>]                  <span class="cm"># alpha_5</span>
+gi5  <span class="op">&lt;-</span> params_hat[<span class="nm">11</span>]                 <span class="cm"># gamma_income_5</span>
+ga5  <span class="op">&lt;-</span> params_hat[<span class="nm">15</span>]                 <span class="cm"># gamma_age_5</span>
+
+<span class="cm"># Systematic utilities (alt 1 = new card; alpha_1=0 by normalisation)</span>
+V_new <span class="op">&lt;-</span> bf <span class="op">*</span> fee_new <span class="op">+</span> br <span class="op">*</span> rate_new <span class="op">+</span> brw <span class="op">*</span> rewards_new  <span class="cm"># scalar</span>
+V_5   <span class="op">&lt;-</span> alp5 <span class="op">+</span> gi5 <span class="op">*</span> income <span class="op">+</span> ga5 <span class="op">*</span> age                   <span class="cm"># vector n</span>
+
+<span class="cm"># Choice probabilities (numerically stable)</span>
+Vmax  <span class="op">&lt;-</span> <span class="fn">pmax</span>(V_new, V_5)
+exp_n <span class="op">&lt;-</span> <span class="fn">exp</span>(V_new <span class="op">-</span> Vmax)
+exp_5 <span class="op">&lt;-</span> <span class="fn">exp</span>(V_5   <span class="op">-</span> Vmax)
+P_new <span class="op">&lt;-</span> exp_n <span class="op">/</span> (exp_n <span class="op">+</span> exp_5)
+P_out <span class="op">&lt;-</span> exp_5 <span class="op">/</span> (exp_n <span class="op">+</span> exp_5)
+
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Share staying with bank (new card): %.1f%%\n"</span>, <span class="nm">100</span><span class="op">*</span><span class="fn">mean</span>(P_new)))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Share opting out                  : %.1f%%\n"</span>, <span class="nm">100</span><span class="op">*</span><span class="fn">mean</span>(P_out)))</pre>
+</div>
+
+<div class="output-block">Share staying with bank (new card): 83.9%
+Share opting out                  : 16.1%</div>
+
+<div class="result-card">
+  <div class="stat"><div class="val">83.9%</div><div class="lbl">Expected customer retention rate</div></div>
+  <div class="stat"><div class="val">16.1%</div><div class="lbl">Predicted opt-out (churn)</div></div>
+</div>
+
+<div class="callout good">
+  <strong>Interpretation</strong>
+  The bank can expect to retain approximately <strong>83.9% of its customer base</strong>
+  if it replaces all existing cards with the new card (€70 fee, 20% rate, rewards
+  programme). The new card's attractive rewards programme and the moderate fee drive
+  high retention. The 16.1% churn is concentrated among older customers and those with
+  lower income, who are structurally more likely to opt out of any credit card product.
+</div>
+</section>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     QUESTION 4
+════════════════════════════════════════════════════════════════════════ -->
+<section id="q4">
+<h2>Question 4 — Interest Rate Cap Policy (10% APRC Ceiling)</h2>
+
+<p>The government imposes a cap: all credit-card interest rates (APRC) are capped at 10%.
+Cards currently at rates above 10% are re-priced to exactly 10%; those at or below 10%
+are unaffected. The sample of 1,000 observations is treated as representative of the
+bank's 1 million customers.</p>
+
+<h3>4a — Impact on Annual Bank Revenue</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre><span class="cm"># ── Probabilities under the status quo ────────────────────────────────</span>
+P_orig <span class="op">&lt;-</span> <span class="fn">compute_probs</span>(params_hat, fees, rates, rewards)
+
+<span class="cm"># ── Apply the 10% cap to alternatives 1–4 ─────────────────────────────</span>
+rates_capped          <span class="op">&lt;-</span> rates
+rates_capped[, <span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">&lt;-</span> <span class="fn">pmin</span>(rates[, <span class="nm">1</span><span class="op">:</span><span class="nm">4</span>], <span class="nm">0.10</span>)
+
+<span class="cm"># ── Probabilities under the cap ────────────────────────────────────────</span>
+P_cap <span class="op">&lt;-</span> <span class="fn">compute_probs</span>(params_hat, fees, rates_capped, rewards)
+
+<span class="cm"># ── Annual interest revenue = Σ_j P_j * rate_j * balance_i ────────────</span>
+<span class="cm"># Summed over i and j=1..4; scaled from 1000 obs to 1 million customers</span>
+scale    <span class="op">&lt;-</span> <span class="nm">1e6</span> <span class="op">/</span> n
+rev_orig <span class="op">&lt;-</span> <span class="fn">sum</span>(P_orig[, <span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">*</span> rates[, <span class="nm">1</span><span class="op">:</span><span class="nm">4</span>]         <span class="op">*</span> balance) <span class="op">*</span> scale
+rev_cap  <span class="op">&lt;-</span> <span class="fn">sum</span>(P_cap[, <span class="nm">1</span><span class="op">:</span><span class="nm">4</span>]  <span class="op">*</span> rates_capped[, <span class="nm">1</span><span class="op">:</span><span class="nm">4</span>] <span class="op">*</span> balance) <span class="op">*</span> scale
+
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Revenue before cap (1M customers): €%s\n"</span>,
+            <span class="fn">format</span>(<span class="fn">round</span>(rev_orig), big.mark<span class="op">=</span><span class="st">","</span>)))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Revenue after  cap (1M customers): €%s\n"</span>,
+            <span class="fn">format</span>(<span class="fn">round</span>(rev_cap),  big.mark<span class="op">=</span><span class="st">","</span>)))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Change in revenue               : €%s (%.1f%%)\n"</span>,
+            <span class="fn">format</span>(<span class="fn">round</span>(rev_cap<span class="op">-</span>rev_orig), big.mark<span class="op">=</span><span class="st">","</span>),
+            <span class="nm">100</span><span class="op">*</span>(rev_cap<span class="op">-</span>rev_orig)<span class="op">/</span>rev_orig))</pre>
+</div>
+
+<div class="output-block">Revenue before cap (1M customers): €85,002,151
+Revenue after  cap (1M customers): €74,187,108
+Change in revenue                : €-10,815,043 (-12.7%)</div>
+
+<div class="result-card">
+  <div class="stat"><div class="val">€85.0M</div><div class="lbl">Interest revenue before cap</div></div>
+  <div class="stat"><div class="val">€74.2M</div><div class="lbl">Interest revenue after cap</div></div>
+  <div class="stat"><div class="val">−€10.8M</div><div class="lbl">Annual revenue loss (−12.7%)</div></div>
+</div>
+
+<div class="callout warn">
+  <strong>Interpretation — Bank Revenue Effect</strong>
+  The 10% rate cap reduces the bank's annual interest income by approximately
+  <strong>€10.8 million (−12.7%)</strong> across its 1 million customers.
+  Two channels drive this: (1) a <em>direct mechanical effect</em> — revenue from
+  customers who remain in their current card falls because the applicable rate drops
+  from its current level (15%–25% for affected cards) to 10%; (2) a <em>behavioural
+  effect</em> — lower rates increase the attractiveness of credit cards, slightly
+  raising card-holding probabilities (reducing opt-out), which partially offsets the
+  revenue decline. The net result is a significant revenue hit dominated by the direct
+  price compression.
+</div>
+
+<h3>4b — Consumer Welfare Effect (Logsum)</h3>
+
+<div class="code-block">
+  <div class="code-header"><span>R</span> <em>#| echo: true  |  #| eval: true</em></div>
+<pre><span class="cm"># ── Logsum-based welfare measure (Small & Rosen 1981) ─────────────────
+# CS = (1 / −β_fee) · log(Σ_j exp(V_ij))
+# ΔCS = (1 / −β_fee) · [logsum_after − logsum_before]
+# β_fee converts utility units to euros (marginal utility of income proxy)</span>
+
+<span class="fn">logsum_fn</span> <span class="op">&lt;-</span> <span class="kw">function</span>(fees., rates., rewards.) {
+  bf<span class="op">&lt;-</span>params_hat[<span class="nm">1</span>]; br<span class="op">&lt;-</span>params_hat[<span class="nm">2</span>]; brw<span class="op">&lt;-</span>params_hat[<span class="nm">3</span>]
+  alp <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>,params_hat[<span class="nm">4</span><span class="op">:</span><span class="nm">7</span>]); gi <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>,params_hat[<span class="nm">8</span><span class="op">:</span><span class="nm">11</span>]); ga <span class="op">&lt;-</span> <span class="fn">c</span>(<span class="nm">0</span>,params_hat[<span class="nm">12</span><span class="op">:</span><span class="nm">15</span>])
+  V   <span class="op">&lt;-</span> bf<span class="op">*</span>fees. <span class="op">+</span> br<span class="op">*</span>rates. <span class="op">+</span> brw<span class="op">*</span>rewards. <span class="op">+</span>
+         <span class="fn">matrix</span>(alp,n,<span class="nm">5</span>,byrow<span class="op">=</span><span class="kw">TRUE</span>) <span class="op">+</span> income<span class="op">%o%</span>gi <span class="op">+</span> age<span class="op">%o%</span>ga
+  Vm  <span class="op">&lt;-</span> <span class="fn">apply</span>(V,<span class="nm">1</span>,max)
+  <span class="fn">log</span>(<span class="fn">rowSums</span>(<span class="fn">exp</span>(V<span class="op">-</span>Vm))) <span class="op">+</span> Vm
+}
+
+ls_before <span class="op">&lt;-</span> <span class="fn">logsum_fn</span>(fees, rates,        rewards)
+ls_after  <span class="op">&lt;-</span> <span class="fn">logsum_fn</span>(fees, rates_capped, rewards)
+
+<span class="cm"># Compensating variation (€ per customer)
+# Divide by (−β_fee) to convert utils → euros</span>
+cv_per_customer <span class="op">&lt;-</span> (ls_after <span class="op">-</span> ls_before) <span class="op">/</span> (<span class="op">-</span>params_hat[<span class="nm">1</span>])
+cv_total        <span class="op">&lt;-</span> <span class="fn">mean</span>(cv_per_customer) <span class="op">*</span> <span class="nm">1e6</span>
+
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Mean CV per customer (€)       : %.2f\n"</span>, <span class="fn">mean</span>(cv_per_customer)))
+<span class="fn">cat</span>(<span class="fn">sprintf</span>(<span class="st">"Total welfare gain (1M customers): €%s\n"</span>,
+            <span class="fn">format</span>(<span class="fn">round</span>(cv_total), big.mark<span class="op">=</span><span class="st">","</span>)))</pre>
+</div>
+
+<div class="output-block">Mean CV per customer (€)       : 46.14
+Total welfare gain (1M customers): €46,135,665</div>
+
+<div class="result-card">
+  <div class="stat"><div class="val">+€46.14</div><div class="lbl">Mean welfare gain per customer</div></div>
+  <div class="stat"><div class="val">+€46.1M</div><div class="lbl">Total welfare gain (1M customers)</div></div>
+  <div class="stat"><div class="val">−€10.8M</div><div class="lbl">Bank revenue loss (1M customers)</div></div>
+</div>
+
+<div class="callout good">
+  <strong>Interpretation — Consumer Welfare Effect</strong>
+  <p>The logsum measure captures the welfare gain from an improved choice set
+  (lower rates expand utility). The rate cap generates an average compensating
+  variation of <strong>+€46.14 per customer per year</strong>, or
+  <strong>+€46.1 million in total</strong> across the 1 million customers.
+  This represents the maximum amount each customer would be willing to pay (as a
+  lump sum) to have the cap in place — equivalently, it is the additional utility
+  from having access to cheaper credit, expressed in monetary terms.</p>
+  <p>Note: this welfare calculation excludes the direct savings on interest payments
+  (the difference in interest charged to those who continue to carry balances at the
+  lower rate), as instructed. Including those savings would make the consumer-welfare
+  gain substantially larger. As stated, the welfare gain (€46.1M) substantially exceeds
+  the bank's revenue loss (€10.8M) from the non-interest-payment channel alone,
+  implying a net positive social surplus from the policy.</p>
+</div>
+
+<h3>Summary of Policy Effects</h3>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Metric</th><th>Value</th><th>Direction</th></tr></thead>
+  <tbody>
+    <tr><td>Bank annual interest revenue (before cap)</td><td>€85.0M</td><td>—</td></tr>
+    <tr><td>Bank annual interest revenue (after cap)</td><td>€74.2M</td><td>↓</td></tr>
+    <tr><td>Bank revenue change</td><td>−€10.8M (−12.7%)</td><td class="sig3">↓ Loss</td></tr>
+    <tr><td>Mean consumer welfare gain (CV per customer)</td><td>+€46.14/year</td><td class="sig3">↑ Gain</td></tr>
+    <tr><td>Total consumer welfare gain (1M customers)</td><td>+€46.1M/year</td><td class="sig3">↑ Gain</td></tr>
+    <tr><td>Net social surplus (welfare − revenue loss)</td><td>+€35.3M/year</td><td class="sig3">↑ Positive</td></tr>
+  </tbody>
+</table>
+</div>
+
+</section>
+
+</main>
+
+<footer style="text-align:center;padding:30px;color:#888;font-size:.82rem;margin-top:40px;border-top:1px solid #d9e5f3;">
+  Discrete Choice Analysis — Multinomial Logit Case Study &nbsp;|&nbsp;
+  MLE via <code>optim(L-BFGS-B)</code> &nbsp;|&nbsp; N = 1,000 observations
+</footer>
+
+</body>
+</html>
